@@ -1,3 +1,6 @@
+import org.apache.tools.ant.DirectoryScanner;
+
+
 //
 // Partition an array into X parts of ~even size 
 //
@@ -27,11 +30,10 @@ def partition(arrayList, nodes){
 //
 // Get all Test cases given a Maven regexp, from a given path dir. 
 //
-@NonCPS
 def getTestsByRegexp(String path, String regexp){
    DirectoryScanner scanner = new DirectoryScanner();
     if (regexp != null) {
-        log("Input provided: "+regexp);
+	  log("Input provided: "+regexp);
         def rules = regexp.split(",");
         def fullRules = new String[rules.size()];
         def i = 0
@@ -57,7 +59,7 @@ def getTestsByRegexp(String path, String regexp){
 	  
 	    fullRules[i++] = rule 
         }
-        log ("Rules: $fullRules");
+	   log ("Rules: $fullRules");
         scanner.setIncludes(fullRules);
     }
     else {
@@ -75,7 +77,7 @@ def getTestsByRegexp(String path, String regexp){
 	def file = it.replace("/", ".").replace("\\", ".");
 	file = file.replace(".groovy", "");
 	file = file.substring(file.lastIndexOf('.')+1);
-    	log( "FILE: $file");
+	log( "FILE: $file");
 	testCases[i++] = file;
     }
     return testCases;
@@ -88,7 +90,7 @@ def getNodeList(){
     List<String> nodeList = new ArrayList<String>(3);
     def nodes = Jenkins.instance.getLabel("ANRJENKINS").getNodes();
     nodes.each{
-	log("Idle Exec: for $it :  " + it.computer.countIdle());
+    	log("Idle Exec: for $it :  " + it.computer.countIdle());
 	if (it.computer.countIdle() > 0) nodeList.add(it.displayName);
     }    
     return nodeList;
@@ -108,4 +110,35 @@ def splitTests(String path, String regexp) throws Exception{
     def resList = partition(files, nodeList);
     log("---- split tests: " + resList);
     return resList;
+}
+
+//
+// Manage the parallelization of tests 
+//
+def parallelize_tests(splits, type, inclusionsFile, results, prepare, run){
+    log("SPLITS: $splits");
+    def branches = [:];
+    splits.each{ nodeName, tests ->
+	    log( "nodeName: $nodeName ==> tests: $tests");
+	branches["${type}_${nodeName}"] ={
+	    stage("${type}_${nodeName}") {
+		node (nodeName) {
+		    // prepare tests for this node
+		    prepare(); 
+		    writeFile file: inclusionsFile, text: tests.join("\n");
+		    //		    if (debugMode){
+		    //sh "cat inclusions.txt";
+		    //}
+		    //run tests for this node
+		    run();
+		    
+		    //publish junits for this node
+		    if (results != null){
+		        junit results;
+		    }
+		}
+	    }
+	}	    
+    }
+    parallel branches
 }
