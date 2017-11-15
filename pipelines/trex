@@ -29,7 +29,7 @@ stage('Prepare split') {
 }
 
 //Launch all tests stages in parallel
-parallelize_tests('inclusions.txt', 'target/surefire-reports/TEST-*.xml',
+paralUtils.parallelize_tests(splits, 'tests', 'inclusions.txt', 'target/surefire-reports/TEST-*.xml',
 		  {
 		      deleteDir();
 		      writeFile file: "node.txt", text: "$NODE_NAME"; // for info about node;
