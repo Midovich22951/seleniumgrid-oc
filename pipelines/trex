@@ -1,0 +1,5 @@
+node('ANRJENKINS')  {
+    stage('Hello'){
+	echo "Hello";
+    }
+}
