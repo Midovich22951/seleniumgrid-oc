@@ -63,7 +63,21 @@ stage("Summary"){
         
 	echo "archiving summary file";
 	archiveArtifacts 'spock-reports/full_summary.html';
-        
-	echo "End Pipeline";
     }
 }
+
+//check if ALM is asked from TRex: Properties are expanded if so!
+if (! PROJECT_TO_BUILD.equals("\${PROJECT_TO_BUILD}")){
+    stage('ALM') {
+	node ('ANRJENKINS') {
+	    if (currentBuild.resultIsBetterOrEqualTo("UNSTABLE")){
+		echo "Launching ALM with params: " + PREDEF_BUILD_PARAM;
+		build job: PROJECT_TO_BUILD, parameters: [string(name: 'PARAM', value: PREDEF_BUILD_PARAM)];
+	    }
+	    else echo "Don't launch ALM as build result is not OK not Unstable..";
+	}
+    }
+}
+else echo "No ALM required.";
+	 
+echo "End Pipeline";
