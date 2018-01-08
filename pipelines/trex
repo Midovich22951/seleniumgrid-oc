@@ -23,14 +23,14 @@ stage('Prepare split') {
         deleteDir();
         timestamps {
             unstash 'sources';
-            splits = splitTests("${WORKSPACE}/src/main", CAMPAIGN_TEST); // store tests in global var.
+            testsByNodes = splitTests("${WORKSPACE}/src/main", CAMPAIGN_TEST); // store tests in global var.
             log("splits: $splits");
         }
     }
 }
 
 //Launch all tests stages in parallel
-paralUtils.parallelize_tests(splits, 'tests', 'inclusions.txt', 'target/surefire-reports/TEST-*.xml',
+paralUtils.parallelize_tests(testsByNodes, 'tests', 'inclusions.txt', 'target/surefire-reports/TEST-*.xml',
         {
             deleteDir();
             writeFile file: "node.txt", text: "$NODE_NAME"; // for info about node;

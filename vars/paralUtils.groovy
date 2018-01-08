@@ -4,27 +4,25 @@ import org.apache.tools.ant.DirectoryScanner;
 //
 // Partition an array into X parts of ~even size 
 //
-def partition(arrayList, nodes) {
-    def maxNodes = nodes.size();
-    if (arrayList.size() < maxNodes) {
-        maxNodes = arrayList.size();
+Map partition(testList, nodeList) {
+    int nodeCount = nodeList.size();
+    if (testList.size() < nodeCount) {
+        nodeCount = testList.size();
     }
-    Map<String, List> resList = new HashMap<String, List>(maxNodes);
-    def n = 0;
-    for (n = 0; n < maxNodes; n++) {
-        List nodeList = new ArrayList();
-        resList.put(nodes[n], nodeList);
+    Map<String, List> testsByNodes = new HashMap<String, List>(nodeCount);
+    for (int nodeIdx = 0; nodeIdx < nodeCount; nodeIdx++) {
+        testsByNodes.put(nodeList[nodeIdx], new ArrayList());
     }
 
-    n = 0;// reinit node count
-    for (int i = 0; i < arrayList.size(); i++) {
-        if (n == maxNodes) {
-            n = 0;
+    int nodeIdx = 0;
+    for (int testIdx = 0; testIdx < testList.size(); testIdx++) {
+        if (nodeIdx == nodeCount) {
+            nodeIdx = 0;
         }
-        resList.get(nodes[n]).add(arrayList[i]);
-        n++;
+        testsByNodes.get(nodeList[nodeIdx]).add(testList[testIdx]);
+        nodeIdx++;
     }
-    return resList;
+    return testsByNodes;
 }
 
 //
@@ -34,14 +32,14 @@ def getTestsByRegexp(String path, String regexp) {
     DirectoryScanner scanner = new DirectoryScanner();
     if (regexp != null) {
         log("Input provided: " + regexp);
-        def rules = regexp.split(",");
-        def fullRules = new String[rules.size()];
-        def i = 0
+        String[] rules = regexp.split(",");
+        String[] fullRules = new String[rules.size()];
+        int i = 0
 
         rules.each {
-            def prefix = "**/"
-            def suffix = "*"
-            def rule = ""
+            String prefix = "**/"
+            String suffix = "*"
+            String rule = ""
             it = it.trim(); // to remove any ' ' between rules if any
             if (it.startsWith(prefix)) {
                 rule = it;
@@ -52,7 +50,6 @@ def getTestsByRegexp(String path, String regexp) {
             if (!it.endsWith(suffix)) {
                 rule += suffix;
             }
-
             // else  NOthing  fullRules[i++] = it;
             // }
 
@@ -70,7 +67,7 @@ def getTestsByRegexp(String path, String regexp) {
 
     String[] files = scanner.getIncludedFiles();
     String[] testCases = new String[files.length];
-    def i = 0;
+    int i = 0;
     files.each {
         def file = it.replace("/", ".").replace("\\", ".");
         file = file.replace(".groovy", "");
@@ -84,12 +81,14 @@ def getTestsByRegexp(String path, String regexp) {
 //
 // Search nodes where to build on, at least 1 idle exec...
 // 
-def getNodeList() {
-    List<String> nodeList = new ArrayList<String>(3);
+List getNodeList() {
+    List<String> nodeList = new ArrayList<String>();
     def nodes = Jenkins.instance.getLabel("ANRJENKINS").getNodes();
     nodes.each {
         log("Idle Exec: for $it :  " + it.computer.countIdle());
-        if (it.computer.countIdle() > 0) nodeList.add(it.displayName);
+        if (it.computer.countIdle() > 0){
+            nodeList.add(it.displayName);
+        }
     }
     return nodeList;
 }
@@ -97,26 +96,26 @@ def getNodeList() {
 //
 // Split the tests given regexp and the number of slaves 
 // 
-def splitTests(String path, String regexp) throws Exception {
-    String[] files = getTestsByRegexp(path, regexp);
-    if ((files == null) || (files.size() == 0)) {
+Map splitTests(String path, String regexp) throws Exception {
+    String[] testList = getTestsByRegexp(path, regexp);
+    if ((testList == null) || (testList.size() == 0)) {
         throw new Exception("No tests matching regexp: " + regexp);
     }
-    log("--There are " + files.size() + " tests matching regexp. List: \n " + files);
-    def nodeList = getNodeList();
+    log("--There are " + testList.size() + " tests matching regexp. List: \n " + testList);
+    List<String> nodeList = getNodeList();
     log("---Found $nodeList slaves to run parallel tests");
-    def resList = partition(files, nodeList);
-    log("---- split tests: " + resList);
-    return resList;
+    Map testsByNodes = partition(testList, nodeList);
+    log("---- split tests: " + testsByNodes);
+    return testsByNodes;
 }
 
 //
 // Manage the parallelization of tests 
 //
-def parallelize_tests(splits, type, inclusionsFile, results, prepare, run) {
+def parallelize_tests(Map testsByNodes, String type, String inclusionsFile, String results, Closure prepare, Closure run) {
     log("SPLITS: $splits");
-    def branches = [:];
-    splits.each { nodeName, tests ->
+    Map branches = [:];
+    testsByNodes.each { nodeName, tests ->
         log("nodeName: $nodeName ==> tests: $tests");
         branches["${type}_${nodeName}"] = {
             stage("${type}_${nodeName}") {
