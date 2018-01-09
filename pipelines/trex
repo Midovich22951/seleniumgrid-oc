@@ -39,7 +39,7 @@ paralUtils.parallelize_tests(testsByNodes, 'tests', 'inclusions.txt', 'target/su
         {
             // with external params
             sh "mvn -f pom.xml surefire:test   -DskipCodeNarc=true  ${GRID}  -Dmaven.test.failure.ignore=true ${SITE_CODE} -D${TEST_URL}=${URL_TEST} ${GHOST}  -Dsurefire.includesFile=\"inclusions.txt\" ";
-            if (fileExist("target/spock-reports/aggregated_report.json")) {
+            if (fileExists("target/spock-reports/aggregated_report.json")) {
                 sh "mv target/spock-reports/aggregated_report.json   target/spock-reports/aggregated_report.json.${NODE_NAME}_${EXECUTOR_NUMBER}";
             }
 

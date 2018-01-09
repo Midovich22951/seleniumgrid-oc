@@ -1,3 +1,4 @@
+
 class logUtils implements Serializable {
     private static boolean debugMode;
     static pipeline;
