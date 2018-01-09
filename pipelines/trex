@@ -24,7 +24,7 @@ stage('Prepare split') {
         timestamps {
             unstash 'sources';
             testsByNodes = splitTests("${WORKSPACE}/src/main", CAMPAIGN_TEST); // store tests in global var.
-            log("splits: $splits");
+            log("splits: $testsByNodes");
         }
     }
 }
@@ -39,8 +39,9 @@ paralUtils.parallelize_tests(testsByNodes, 'tests', 'inclusions.txt', 'target/su
         {
             // with external params
             sh "mvn -f pom.xml surefire:test   -DskipCodeNarc=true  ${GRID}  -Dmaven.test.failure.ignore=true ${SITE_CODE} -D${TEST_URL}=${URL_TEST} ${GHOST}  -Dsurefire.includesFile=\"inclusions.txt\" ";
-
-            sh "mv target/spock-reports/aggregated_report.json   target/spock-reports/aggregated_report.json.${NODE_NAME}_${EXECUTOR_NUMBER}";
+            if (fileExist("target/spock-reports/aggregated_report.json")) {
+                sh "mv target/spock-reports/aggregated_report.json   target/spock-reports/aggregated_report.json.${NODE_NAME}_${EXECUTOR_NUMBER}";
+            }
 
             // useless unless if we can use the official one, oherwise we will get a patched version after
             sh "cp src/main/resources/templates/summary-template.html target/spock-reports";
