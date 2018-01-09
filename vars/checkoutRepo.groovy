@@ -1,13 +1,13 @@
 def call(git_url, branch, ref_specs) {// pull_request to be reviewed...?????
     def credentialsId =  "$ANR_USER_CRED"; // Global Env. Var.
-    def default_branch_name = branch; 
+    def default_branch_name = branch;
     if ("$ref_specs"){
-	default_branch_name = "origin/mainline";
+        default_branch_name = "origin/mainline";
     }   
     echo "Working on gitURL is : $git_url";
     echo "Checking out $default_branch_name";
 
-    checkout ([  $class: 'GitSCM', 
+    checkout ([  $class: 'GitSCM',
                 branches: [[
                         name: "$default_branch_name"
                         ]], 
@@ -19,9 +19,9 @@ def call(git_url, branch, ref_specs) {// pull_request to be reviewed...?????
                         url: "$git_url"
                         ]]
                 ])
-	
-	if ("$ref_specs") { //2nd try necessary when pull-request... not clear why...
-	    checkout ([  $class: 'GitSCM', 
+
+    if ("$ref_specs") { //2nd try necessary when pull-request... not clear why...
+        checkout ([  $class: 'GitSCM', 
 			 branches: [[
 				     name: "$branch"
 				     ]], 
@@ -33,5 +33,5 @@ def call(git_url, branch, ref_specs) {// pull_request to be reviewed...?????
 					      url: "$git_url"
 					      ]]
 			 ])
-	 }   
+    }
 }

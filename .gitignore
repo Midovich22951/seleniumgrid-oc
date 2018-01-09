@@ -1,0 +1,38 @@
+# Maven build directory
+target/
+bin/
+
+# Binary files
+*.class
+*.jar
+*.war
+*.ear
+
+# Eclipse generated files
+.settings/
+target-eclipse/
+.project
+.classpath
+
+# IntelliJ generated files
+.idea/
+*.iml
+
+# Visual Code Studio generated files
+.vscode/
+
+# Logs and temporary files
+logs/
+*.log
+*.log.*
+*.tmp
+
+# VM crash log and heap dump
+hs_err_pid*
+*.hprof
+
+# Project specific
+/cache
+core.*
+*.nupkg
+.DS_Store

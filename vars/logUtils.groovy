@@ -1,20 +1,25 @@
 
 class logUtils implements Serializable {
-    static private boolean debugMode;
-    static pp;
+    private static boolean debugMode;
+    static pipeline;
 
-    def init(who){
-	if (who.params.containsKey("pp_debug")) {
-	    debugMode=who.params.pp_debug;
-	} else debugMode = false;
-	pp = who;
+    void init(who) {
+        if (who.params.containsKey("pp_debug")) {
+            debugMode = who.params.pp_debug;
+        } else {
+            debugMode = false;
+        }
+        pipeline = who;
     }
 
-    def getDebugMode() {
-	debugMode	
+    boolean getDebugMode() {
+        return debugMode
     }
-    def trace(msg){
-        if (debugMode) pp.echo "--debug: " + msg;	 
+
+    void trace(String msg) {
+        if (debugMode) {
+            pipeline.echo "--debug: " + msg;
+        }
     }
 }
 

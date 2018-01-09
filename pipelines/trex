@@ -1,83 +1,86 @@
 library 'pipeline_paral_utils@1.0'
 
-//Init log with debug mode, defined with param called 'pp_debug' which MUST exist
+// Init log with debug mode, defined with param called 'pp_debug' which MUST exist
 logUtils.init(this);
 log("Start pipeline");
 
 //////////////////////////////
 //// Pipeline begins here ////
 //////////////////////////////
-stage ('check out branch'){
-    node ('ANRJENKINS') {
-	deleteDir();
-	checkoutRepo (GIT_URL, RELEASE, REFSPEC);
-	echo "Compiling ...";
-	
-	sh "mvn clean compile";
-	stash includes: '**', name: 'sources'	    }
+stage('check out branch') {
+    node('ANRJENKINS') {
+        deleteDir();
+        checkoutRepo(GIT_URL, RELEASE, REFSPEC);
+        echo "Compiling ...";
+
+        sh "mvn clean compile";
+        stash includes: '**', name: 'sources'
+    }
 }
 
 stage('Prepare split') {
-    node ('master') {
-	deleteDir();
-	timestamps {
-	    unstash 'sources';
-	    splits = splitTests("${WORKSPACE}/src/main", CAMPAIGN_TEST); //store tests in global var.
-	    log("splits: $splits");
-	}
+    node('master') {
+        deleteDir();
+        timestamps {
+            unstash 'sources';
+            testsByNodes = splitTests("${WORKSPACE}/src/main", CAMPAIGN_TEST); // store tests in global var.
+            log("splits: $testsByNodes");
+        }
     }
 }
 
 //Launch all tests stages in parallel
-paralUtils.parallelize_tests(splits, 'tests', 'inclusions.txt', 'target/surefire-reports/TEST-*.xml',
-		  {
-		      deleteDir();
-		      writeFile file: "node.txt", text: "$NODE_NAME"; // for info about node;
-		      unstash 'sources';
-		  },
-		  {
-		      //with external params
-		      sh "mvn -f pom.xml surefire:test   -DskipCodeNarc=true  ${GRID}  -Dmaven.test.failure.ignore=true ${SITE_CODE} -D${TEST_URL}=${URL_TEST} ${GHOST}  -Dsurefire.includesFile=\"inclusions.txt\" ";
-		      // 
-		      
-		      sh "mv target/spock-reports/aggregated_report.json   target/spock-reports/aggregated_report.json.${NODE_NAME}_${EXECUTOR_NUMBER}" ;
-		      
-		      //useless unless if we can use the official one, oherwise we will get a patched version after
-		      sh "cp src/main/resources/templates/summary-template.html target/spock-reports";
-		      
-		      dir('target'){
-			  archiveArtifacts 'surefire-reports/**, spock-reports/**, CodeNarcAntReport.html';
-		      }
-		  }
-		  )
+paralUtils.parallelize_tests(testsByNodes, 'tests', 'inclusions.txt', 'target/surefire-reports/TEST-*.xml',
+        {
+            deleteDir();
+            writeFile file: "node.txt", text: "$NODE_NAME"; // for info about node;
+            unstash 'sources';
+        },
+        {
+            // with external params
+            sh "mvn -f pom.xml surefire:test   -DskipCodeNarc=true  ${GRID}  -Dmaven.test.failure.ignore=true ${SITE_CODE} -D${TEST_URL}=${URL_TEST} ${GHOST}  -Dsurefire.includesFile=\"inclusions.txt\" ";
+            if (fileExists("target/spock-reports/aggregated_report.json")) {
+                sh "mv target/spock-reports/aggregated_report.json   target/spock-reports/aggregated_report.json.${NODE_NAME}_${EXECUTOR_NUMBER}";
+            }
 
-stage("Summary"){
-    node("master"){
-	dir('spock-reports') {  deleteDir()} ;
-	step($class: 'hudson.plugins.copyartifact.CopyArtifact', projectName: "${JOB_NAME}", filter: "spock-reports/**",
-	     selector: [$class: 'SpecificBuildSelector', buildNumber: "${BUILD_NUMBER}"]);
-	
-	spockReports.patchSummaryTemplate();
-	spockReports.concatAggregate();
-	spockReports.generateSpockReport();
-        
-	echo "archiving summary file";
-	archiveArtifacts 'spock-reports/full_summary.html';
+            // useless unless if we can use the official one, oherwise we will get a patched version after
+            sh "cp src/main/resources/templates/summary-template.html target/spock-reports";
+
+            dir('target') {
+                archiveArtifacts 'surefire-reports/**, spock-reports/**, CodeNarcAntReport.html';
+            }
+        }
+)
+
+stage("Summary") {
+    node("master") {
+        dir('spock-reports') { deleteDir() };
+        step($class: 'hudson.plugins.copyartifact.CopyArtifact', projectName: "${JOB_NAME}", filter: "spock-reports/**",
+                selector: [$class: 'SpecificBuildSelector', buildNumber: "${BUILD_NUMBER}"]);
+
+        spockReports.patchSummaryTemplate();
+        spockReports.concatAggregate();
+        spockReports.generateSpockReport();
+
+        echo "archiving summary file";
+        archiveArtifacts 'spock-reports/full_summary.html';
     }
 }
 
-//check if ALM is asked from TRex: Properties are expanded if so!
-if (! PROJECT_TO_BUILD.equals("\${PROJECT_TO_BUILD}")){
+// check if ALM is asked from TRex: Properties are expanded if so!
+if (!PROJECT_TO_BUILD.equals("\${PROJECT_TO_BUILD}")) {
     stage('ALM') {
-	node ('ANRJENKINS') {
-	    if (currentBuild.resultIsBetterOrEqualTo("UNSTABLE")){
-		echo "Launching ALM with params: " + PREDEF_BUILD_PARAM;
-		build job: PROJECT_TO_BUILD, parameters: [string(name: 'PARAM', value: PREDEF_BUILD_PARAM)];
-	    }
-	    else echo "Don't launch ALM as build result is not OK not Unstable..";
-	}
+        node('ANRJENKINS') {
+            if (currentBuild.resultIsBetterOrEqualTo("UNSTABLE")) {
+                echo "Launching ALM with params: " + PREDEF_BUILD_PARAM;
+                build job: PROJECT_TO_BUILD, parameters: [string(name: 'PARAM', value: PREDEF_BUILD_PARAM)];
+            } else {
+                echo "Don't launch ALM as build result is not OK not Unstable..";
+            }
+        }
     }
+} else {
+    echo "No ALM required.";
 }
-else echo "No ALM required.";
-	 
+
 echo "End Pipeline";
