@@ -4,7 +4,10 @@ import org.apache.tools.ant.DirectoryScanner;
 //
 // Partition an array into X parts of ~even size 
 //
-Map partition(testList, nodeList) {
+Map partition(testList, nodeList) throws Exception {
+    if ((nodeList == null) || (nodeList.size() == 0)) {
+        throw new Exception("No nodes to execute tests");
+    }
     int nodeCount = nodeList.size();
     if (testList.size() < nodeCount) {
         nodeCount = testList.size();
@@ -96,7 +99,7 @@ List getNodeList() {
 //
 // Split the tests given regexp and the number of slaves 
 // 
-Map splitTests(String path, String regexp) {
+Map splitTests(String path, String regexp) throws Exception {
     String[] testList = getTestsByRegexp(path, regexp);
     if ((testList == null) || (testList.size() == 0)) {
         throw new Exception("No tests matching regexp: " + regexp);
