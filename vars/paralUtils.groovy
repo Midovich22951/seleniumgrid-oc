@@ -96,7 +96,7 @@ List getNodeList() {
 //
 // Split the tests given regexp and the number of slaves 
 // 
-Map splitTests(String path, String regexp) throws Exception {
+Map splitTests(String path, String regexp) {
     String[] testList = getTestsByRegexp(path, regexp);
     if ((testList == null) || (testList.size() == 0)) {
         throw new Exception("No tests matching regexp: " + regexp);
