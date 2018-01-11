@@ -1,3 +1,4 @@
+library 'pipeline_paral_utils'
 
 // Init log with debug mode, defined with param called 'pp_debug' which MUST exist
 logUtils.init(this);
