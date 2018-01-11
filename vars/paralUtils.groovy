@@ -116,7 +116,7 @@ Map splitTests(String path, String regexp) throws Exception {
 // Manage the parallelization of tests 
 //
 def parallelize_tests(Map testsByNodes, String type, String inclusionsFile, String results, Closure prepare, Closure run) {
-    log("SPLITS: $splits");
+    log("SPLITS: $testsByNodes");
     Map branches = [:];
     testsByNodes.each { nodeName, tests ->
         log("nodeName: $nodeName ==> tests: $tests");
