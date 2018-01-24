@@ -13,7 +13,7 @@ stage('check out branch') {
         checkoutRepo(GIT_URL, RELEASE, REFSPEC);
         echo "Compiling ...";
 
-        sh "mvn clean compile";
+        sh "mvn -B clean compile";
         stash includes: '**', name: 'sources'
     }
 }
@@ -38,7 +38,7 @@ paralUtils.parallelize_tests(testsByNodes, 'tests', 'inclusions.txt', 'target/su
         },
         {
             // with external params
-            sh "mvn -f pom.xml surefire:test   -DskipCodeNarc=true  ${GRID}  -Dmaven.test.failure.ignore=true ${SITE_CODE} -D${TEST_URL}=${URL_TEST} ${GHOST}  -Dsurefire.includesFile=\"inclusions.txt\" ";
+            sh "mvn -B -f pom.xml surefire:test   -DskipCodeNarc=true  ${GRID}  -Dmaven.test.failure.ignore=true ${SITE_CODE} -D${TEST_URL}=${URL_TEST} ${GHOST}  -Dsurefire.includesFile=\"inclusions.txt\" ";
             if (fileExists("target/spock-reports/aggregated_report.json")) {
                 sh "mv target/spock-reports/aggregated_report.json   target/spock-reports/aggregated_report.json.${NODE_NAME}_${EXECUTOR_NUMBER}";
             }
