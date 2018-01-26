@@ -11,10 +11,18 @@ stage('check out branch') {
     node('ANRJENKINS') {
         deleteDir();
         checkoutRepo(GIT_URL, RELEASE, REFSPEC);
-        echo "Compiling ...";
-
-        sh "mvn -B clean compile";
-        stash includes: '**', name: 'sources'
+        boolean buildPassed = false;
+        try {
+            sh "mvn -B clean compile";
+            stash includes: '**', name: 'sources'
+        }
+        finally {
+            if (fileExists("target/CodeNarcAntReport.html")) {
+                dir('target') {
+                    archiveArtifacts 'CodeNarcAntReport.html'
+                }
+            }
+        }
     }
 }
 
@@ -47,7 +55,7 @@ paralUtils.parallelize_tests(testsByNodes, 'tests', 'inclusions.txt', 'target/su
             sh "cp src/main/resources/templates/summary-template.html target/spock-reports";
 
             dir('target') {
-                archiveArtifacts 'surefire-reports/**, spock-reports/**, CodeNarcAntReport.html';
+                archiveArtifacts 'surefire-reports/**, spock-reports/**';
             }
         }
 )
