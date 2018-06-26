@@ -1,8 +1,11 @@
-library 'pipeline_paral_utils'
+library 'test_headless'
 
 // Init log with debug mode, defined with param called 'pp_debug' which MUST exist
 logUtils.init(this);
 log("Start pipeline");
+
+def templatePath = 'https://raw.githubusercontent.com/Midovich22951/seleniumgrid/master/selenium-hub.yaml'
+def templateName = 'selenium-hub'
 
 //////////////////////////////
 //// Pipeline begins here ////
@@ -24,6 +27,65 @@ stage('check out branch') {
         }
     }
 }
+
+stage('prepare grid') {
+            steps {
+                script {
+                    openshift.withCluster() {
+                        openshift.withProject() {
+                            echo "Using project: ${openshift.project()}"
+                        }
+                    }
+                }
+            }
+        }
+        stage('cleanup grid') {
+            steps {
+                script {
+                    openshift.withCluster() {
+                        openshift.withProject() {
+                            // delete everything with this template label
+                            //openshift.selector('all', [ app : templateName ]).delete()
+                            openshift.selector('route', [ app : templateName ]).delete()
+                            openshift.selector('svc', [ app : templateName ]).delete()
+                            openshift.selector('dc', [ app : templateName ]).delete()
+                            //openshift.selector('all', [ app : templateName ]).delete()
+                            // delete any secrets with this template label
+                            //if (openshift.selector("secrets", templateName).exists()) {
+                            //    openshift.selector("secrets", templateName).delete()
+                            //}
+                        }
+                    }
+                } // script
+            } // steps
+        } // stage
+        stage('creating selenium hub') {
+            steps {
+                script {
+                    openshift.withCluster() {
+                        openshift.withProject() {
+                            // create a new application from the templatePath
+                            openshift.newApp(templatePath)
+                        }
+                    }
+                } // script
+            } // steps
+        } // stage
+        // stage
+        stage('deploy selenium hub') {
+            steps {
+                script {
+                    openshift.withCluster() {
+                        openshift.withProject() {
+                            def rm = openshift.selector("dc", templateName).rollout()
+                            openshift.selector("dc", templateName).related('pods').untilEach(1) {
+                                return (it.object().status.phase == "Running")
+                            }
+                        }
+                    }
+                } // script
+            } // steps
+        } // stage
 
 stage('Prepare split') {
     node('master') {
