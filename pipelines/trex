@@ -36,7 +36,7 @@ stage('check out branch') {
 
 stage('create selenium grid') {
 
-        echo "instance number is ${FORK.count} "
+        echo "instance number is ${ForkCount} "
 
 }
 
