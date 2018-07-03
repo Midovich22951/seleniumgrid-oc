@@ -36,9 +36,11 @@ stage('check out branch') {
 }
 
 stage('create selenium grid') {
-
+    node('master') {
         echo "instance number is ${ForkCount} "
-
+        deployhub.call("developer","12345","172.16.204.231","")
+tenant, String password, String acs_instance, String project, String template_file
+    }
 }
 
 
