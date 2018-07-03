@@ -5,6 +5,7 @@ def testLib = library(identifier: 'pipeline-library-praxis@master', retriever: m
          credentialsId: 'dcd4e61a-654c-47f4-8078-108c4e6678de',
          remote: 'https://rndwww.nce.amadeus.net/git/scm/test_headless/pipeline.git']))
 
+def label = (this.params.containsKey("LABEL") && LABEL)? retrieveLabel(LABEL) : 'ANRJENKINS';
 
 // Init log with debug mode, defined with param called 'pp_debug' which MUST exist
 logUtils.init(this);
