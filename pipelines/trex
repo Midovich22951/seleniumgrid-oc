@@ -37,8 +37,8 @@ stage('check out branch') {
 
 stage('create selenium grid') {
     node('master') {
-        echo "instance number is ${ForkCount} "
-        deployhub("developer","12345","https://172.16.204.231:8443","https://rndwww.nce.amadeus.net/git/projects/TEST_HEADLESS/repos/pipeline/browse/templates/selenium-hub.yaml")
+        echo "instance number is ${ForkCount} ";
+        deployhub("developer","12345","https://172.16.204.231:8443","https://rndwww.nce.amadeus.net/git/projects/TEST_HEADLESS/repos/pipeline/browse/templates/selenium-hub.yaml");
     }
 }
 
