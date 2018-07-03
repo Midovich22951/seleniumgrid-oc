@@ -2,7 +2,7 @@
 
 def testLib = library(identifier: 'pipeline-library-praxis@master', retriever: modernSCM(
         [$class: 'GitSCMSource',
-         credentialsId: '80c184b4-f074-49c4-8c6f-7f7e438edca4',
+         credentialsId: 'dcd4e61a-654c-47f4-8078-108c4e6678de',
          remote: 'https://rndwww.nce.amadeus.net/git/scm/test_headless/pipeline.git']))
 
 
