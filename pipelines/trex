@@ -47,7 +47,7 @@ stage('Prepare split') {
         deleteDir();
         timestamps {
             unstash 'sources';
-            testsByNodes = splitTests("${WORKSPACE}/src/main", CAMPAIGN_TEST, label); // store tests in global var.
+            testsByNodes = splitTests("${WORKSPACE}/src/main", CAMPAIGN_TEST); // store tests in global var.
             log("splits: $testsByNodes label applied:$label");
         }
     }
