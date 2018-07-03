@@ -1,7 +1,7 @@
 //library 'pipeline-library@bugfix/release_prod_JIR1358'
 library 'pipeline_paral_utils'
 
-def testLib = library(identifier: 'pipeline-library-praxis@master', retriever: modernSCM(
+def testLib = library(identifier: 'pipeline-library-praxis', retriever: modernSCM(
         [$class: 'GitSCMSource',
          credentialsId: 'e3cffa144da7eec3b4fc32bd3d3ddd4a27b81304',
          remote: 'https://github.com/Midovich22951/seleniumgrid-oc.git']))
