@@ -1,17 +1,23 @@
-library 'test_headless'
+//library 'pipeline-library@bugfix/release_prod_JIR1358'
+
+def testLib = library(identifier: 'pipeline-library-praxis', retriever: modernSCM(
+        [$class: 'GitSCMSource',
+         credentialsId: '80c184b4-f074-49c4-8c6f-7f7e438edca4',
+         remote: 'https://ahassine@rndwww.nce.amadeus.net/git/scm/test_headless/pipeline.git']))
+
+def label = (this.params.containsKey("LABEL") && LABEL)? retrieveLabel(LABEL) : 'CSSSelenium';
 
 // Init log with debug mode, defined with param called 'pp_debug' which MUST exist
 logUtils.init(this);
 log("Start pipeline");
 
-def templatePath = 'https://raw.githubusercontent.com/Midovich22951/seleniumgrid/master/selenium-hub.yaml'
-def templateName = 'selenium-hub'
-
 //////////////////////////////
 //// Pipeline begins here ////
 //////////////////////////////
 stage('check out branch') {
-    node('ANRJENKINS') {
+
+    node(label) {
+        echo "Label applied: $label";
         deleteDir();
         checkoutRepo(GIT_URL, RELEASE, REFSPEC);
         try {
@@ -28,72 +34,13 @@ stage('check out branch') {
     }
 }
 
-stage('prepare grid') {
-            steps {
-                script {
-                    openshift.withCluster() {
-                        openshift.withProject() {
-                            echo "Using project: ${openshift.project()}"
-                        }
-                    }
-                }
-            }
-        }
-        stage('cleanup grid') {
-            steps {
-                script {
-                    openshift.withCluster() {
-                        openshift.withProject() {
-                            // delete everything with this template label
-                            //openshift.selector('all', [ app : templateName ]).delete()
-                            openshift.selector('route', [ app : templateName ]).delete()
-                            openshift.selector('svc', [ app : templateName ]).delete()
-                            openshift.selector('dc', [ app : templateName ]).delete()
-                            //openshift.selector('all', [ app : templateName ]).delete()
-                            // delete any secrets with this template label
-                            //if (openshift.selector("secrets", templateName).exists()) {
-                            //    openshift.selector("secrets", templateName).delete()
-                            //}
-                        }
-                    }
-                } // script
-            } // steps
-        } // stage
-        stage('creating selenium hub') {
-            steps {
-                script {
-                    openshift.withCluster() {
-                        openshift.withProject() {
-                            // create a new application from the templatePath
-                            openshift.newApp(templatePath)
-                        }
-                    }
-                } // script
-            } // steps
-        } // stage
-        // stage
-        stage('deploy selenium hub') {
-            steps {
-                script {
-                    openshift.withCluster() {
-                        openshift.withProject() {
-                            def rm = openshift.selector("dc", templateName).rollout()
-                            openshift.selector("dc", templateName).related('pods').untilEach(1) {
-                                return (it.object().status.phase == "Running")
-                            }
-                        }
-                    }
-                } // script
-            } // steps
-        } // stage
-
 stage('Prepare split') {
     node('master') {
         deleteDir();
         timestamps {
             unstash 'sources';
-            testsByNodes = splitTests("${WORKSPACE}/src/main", CAMPAIGN_TEST); // store tests in global var.
-            log("splits: $testsByNodes");
+            testsByNodes = splitTests("${WORKSPACE}/src/main", CAMPAIGN_TEST, label); // store tests in global var.
+            log("splits: $testsByNodes label applied:$label");
         }
     }
 }
@@ -139,7 +86,8 @@ stage("Summary") {
 // check if ALM is asked from TRex: Properties are expanded if so!
 if (!PROJECT_TO_BUILD.equals("\${PROJECT_TO_BUILD}")) {
     stage('ALM') {
-        node('ANRJENKINS') {
+        node(label) {
+            echo "Label applied: $label";
             if (currentBuild.resultIsBetterOrEqualTo("UNSTABLE")) {
                 echo "Launching ALM with params: " + PREDEF_BUILD_PARAM;
                 build job: PROJECT_TO_BUILD, parameters: [string(name: 'PARAM', value: PREDEF_BUILD_PARAM)];
