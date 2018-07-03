@@ -3,7 +3,7 @@
 def testLib = library(identifier: 'pipeline-library-praxis', retriever: modernSCM(
         [$class: 'GitSCMSource',
          credentialsId: '80c184b4-f074-49c4-8c6f-7f7e438edca4',
-         remote: 'https://ahassine@rndwww.nce.amadeus.net/git/scm/test_headless/pipeline.git']))
+         remote: 'https://rndwww.nce.amadeus.net/git/scm/test_headless/pipeline.git']))
 
 
 // Init log with debug mode, defined with param called 'pp_debug' which MUST exist
