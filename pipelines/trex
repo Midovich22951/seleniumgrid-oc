@@ -34,6 +34,13 @@ stage('check out branch') {
     }
 }
 
+stage('create selenium grid') {
+
+        echo "instance number is ${FORK.count} "
+
+}
+
+
 stage('Prepare split') {
     node('master') {
         deleteDir();
